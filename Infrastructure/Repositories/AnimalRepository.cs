@@ -12,11 +12,6 @@ namespace Infrastructure.Repositories
         {
             _context = context;
         }       
-
-      
-
-      
-
         public async Task AddAnimalAsync(Animal animal)
         {
             _context.Animals.Add(animal);

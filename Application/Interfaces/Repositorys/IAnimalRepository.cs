@@ -10,6 +10,6 @@ namespace Application.Interfaces.Repositorys
         Task  AddAnimalAsync(Animal animal);
         Task DeleteAnimalAsync(Guid id);
         Task UpdateAnimalAsync(Animal animal);
-        
+    
     }
 }
