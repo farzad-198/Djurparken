@@ -1,7 +1,7 @@
-﻿using Application.Interfaces;
-using Infrastructure.Data;
+﻿using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
+using Application.Interfaces.Repositorys;
 
 namespace Infrastructure.Repositories
 {

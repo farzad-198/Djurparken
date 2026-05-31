@@ -1,9 +1,7 @@
 ﻿using Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Application.Interfaces
+
+namespace Application.Interfaces.Repositorys
 {
     public interface IHabitatRepository
     {
