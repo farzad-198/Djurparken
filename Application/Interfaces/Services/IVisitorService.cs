@@ -1,10 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Domain.Entities;
+
 
 namespace Application.Interfaces.Services
 {
-    internal class IVisitorService
+    public interface IVisitorService
     {
+        Task<List<Visitor>> GetAllVisitorsAsync();
+        Task<Visitor?> GetVisitorByIdAsync(Guid id);
+        Task<Visitor> AddVisitorAsync(Visitor visitor);
+        Task<bool> UpdateVisitorAsync(Visitor visitor);
+        Task<bool> DeleteVisitorAsync(Guid id);
     }
 }
