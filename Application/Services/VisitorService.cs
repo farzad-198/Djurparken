@@ -41,9 +41,9 @@ namespace Application.Services
             return await _repo.GetVisitorByIdAsync(id);
         }
 
-        public async Task<bool> UpdateVisitorAsync(Visitor visitor)
+        public async Task<bool> UpdateVisitorAsync(Guid id, Visitor visitor)
         {
-            var visitorToUpdate = await _repo.GetVisitorByIdAsync(visitor.Id);
+            var visitorToUpdate = await _repo.GetVisitorByIdAsync(id);
             if (visitorToUpdate == null)
                 return false;
             visitorToUpdate.FullName = visitor.FullName;
