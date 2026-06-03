@@ -8,7 +8,7 @@ namespace Application.Interfaces.Services
         Task<List<Animal>> GetAllAnimalsAsync();
         Task<Animal?> GetAnimalByIdAsync(Guid id);
         Task<Animal> AddAnimalAsync(Animal animal);
-        Task<bool> UpdateAnimalAsync(Animal animal);
+        Task<bool> UpdateAnimalAsync(Guid animalId, Animal animal);
         Task<bool> DeleteAnimalAsync(Guid id); 
     }
 }

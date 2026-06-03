@@ -1,9 +1,7 @@
 ﻿using Application.Interfaces.Repositorys;
 using Application.Interfaces.Services;
 using Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace Application.Services
 {
@@ -40,7 +38,7 @@ namespace Application.Services
             return await _repo.GetAnimalByIdAsync(id);
         }
 
-        public async Task<bool> UpdateAnimalAsync(Animal animal)
+        public async Task<bool> UpdateAnimalAsync(Guid animalId, Animal animal)
         {
           var animalToUpdate = await _repo.GetAnimalByIdAsync(animal.Id);
             if (animalToUpdate == null)
