@@ -42,9 +42,9 @@ namespace Application.Services
             return await _repo.GetHabitatByIdAsync(id);
         }
 
-        public async Task<bool> UpdateHabitatAsync(Habitat habitat)
+        public async Task<bool> UpdateHabitatAsync(Guid id, Habitat habitat)
         {
-            var habitatToUpdate = await _repo.GetHabitatByIdAsync(habitat.Id);
+            var habitatToUpdate = await _repo.GetHabitatByIdAsync(id);
             if (habitatToUpdate == null)
                 return false;
             habitatToUpdate.Name = habitat.Name;

@@ -8,7 +8,7 @@ namespace Application.Interfaces.Services
         Task<List<Habitat>> GetAllHabitatsAsync();
         Task<Habitat?> GetHabitatByIdAsync(Guid id);
         Task<Habitat> AddHabitatAsync(Habitat habitat);
-        Task<bool> UpdateHabitatAsync(Habitat habitat);
+        Task<bool> UpdateHabitatAsync(Guid id, Habitat habitat);
         Task<bool> DeleteHabitatAsync(Guid id); 
     }
 }
