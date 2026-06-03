@@ -1,12 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿ 
 
 namespace Presentation.Menus
 {
     public class MainMenu
     {
+        private readonly AnimalService _animalService;
+        private readonly HabitatService _habitatService;
+        private readonly VisitorService _visitorService;
+        private readonly VisitService _visitService;
+
+        public MainMenu(
+            AnimalService animalService,
+            HabitatService habitatService,
+            VisitorService visitorService,
+            VisitService visitService)
+        {
+            _animalService = animalService;
+            _habitatService = habitatService;
+            _visitorService = visitorService;
+            _visitService = visitService;
+        }
+
+
         public async Task StartMainMenu()
         { 
             bool isRunning = true;
@@ -27,20 +42,20 @@ namespace Presentation.Menus
                 switch (choice)
                 {
                     case "1":
-                        AnimalMenu animalMenu = new AnimalMenu();
+                        AnimalMenu animalMenu = new AnimalMenu(_animalService);
                         await animalMenu.StartAnimalMenu();
                         break;
 
                     case "2":
-                        HabitatMenu habitatMenu = new HabitatMenu();
+                        HabitatMenu habitatMenu = new HabitatMenu(_habitatService);
                         await habitatMenu.StartHabitatMenu();   
                         break;
                     case "3":
-                        VisitorMenu visitorMenu = new VisitorMenu();
+                        VisitorMenu visitorMenu = new VisitorMenu(_visitorService);
                         await visitorMenu.StartVisitorMenu();
                         break;
                     case "4":
-                        VisitMenu visitMenu = new VisitMenu();
+                        VisitMenu visitMenu = new VisitMenu(_visitService);
                         await visitMenu.StartVisitMenu();
                         break;
                     case "5":
