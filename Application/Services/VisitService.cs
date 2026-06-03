@@ -41,9 +41,9 @@ namespace Application.Services
             return await _repo.GetVisitByIdAsync(id);
         }
 
-        public async Task<bool> UpdateVisitAsync(Visit visit)
+        public async Task<bool> UpdateVisitAsync(Guid id, Visit visit)
         {
-            var visitToUpdate = await _repo.GetVisitByIdAsync(visit.Id);
+            var visitToUpdate = await _repo.GetVisitByIdAsync(id);
             if (visitToUpdate == null)
                 return false;
             visitToUpdate.VisitorId = visit.VisitorId;
