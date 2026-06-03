@@ -1,4 +1,4 @@
-﻿ 
+﻿using Application.Services;
 
 namespace Presentation.Menus
 {
@@ -59,7 +59,7 @@ namespace Presentation.Menus
                         await visitMenu.StartVisitMenu();
                         break;
                     case "5":
-                        StatisticsMenu statisticsMenu = new StatisticsMenu();
+                        StatisticsMenu statisticsMenu = new StatisticsMenu(_animalService, _habitatService, _visitorService, _visitService);
                         await statisticsMenu.StartStatisticsMenu();
                         break;
                    case "0":
