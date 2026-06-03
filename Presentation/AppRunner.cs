@@ -40,7 +40,7 @@ namespace Presentation
                 visitorService,
                 visitService
             );
-
+            await SeedData.SeedAsync(context);
             await mainMenu.StartMainMenu();
         }
     }
