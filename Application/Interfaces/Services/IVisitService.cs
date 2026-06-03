@@ -10,7 +10,7 @@ namespace Application.Interfaces.Services
         Task<List<Visit>> GetAllVisitsAsync();
         Task<Visit?> GetVisitByIdAsync(Guid id);
         Task<Visit> AddVisitAsync(Visit visit);
-        Task<bool> UpdateVisitAsync(Visit visit);
+        Task<bool> UpdateVisitAsync(Guid id, Visit visit);
         Task<bool> DeleteVisitAsync(Guid id);
     }
 }
