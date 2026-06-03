@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ZooDbContext))]
-    [Migration("20260601183036_Djurparken")]
+    [Migration("20260603104804_Djurparken")]
     partial class Djurparken
     {
         /// <inheritdoc />

@@ -21,15 +21,15 @@ namespace Infrastructure.Data
 
         public DbSet<Visit> Visits { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseSqlServer(
-                    "Server=FARZAD\\SQLEXPRESS;Database=DjurparkenDb;Trusted_Connection=True;TrustServerCertificate=True;"
-                );
-            }
-        }
+        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        //{
+        //    if (!optionsBuilder.IsConfigured)
+        //    {
+        //        optionsBuilder.UseSqlServer(
+        //            "Server=FARZAD\\SQLEXPRESS;Database=DjurparkenDb;Trusted_Connection=True;TrustServerCertificate=True;"
+        //        );
+        //    }
+        //}
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
