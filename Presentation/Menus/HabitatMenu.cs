@@ -25,7 +25,6 @@ namespace Presentation.Menus
                 Console.WriteLine("2. Show all habitats");
                 Console.WriteLine("3. Update habitat");
                 Console.WriteLine("4. Delete habitat");
-                Console.WriteLine("5. Search habitat");
                 Console.WriteLine("0. Back to main menu");
                 Console.Write("Choose an option: ");
 
@@ -34,32 +33,22 @@ namespace Presentation.Menus
                 switch (choice)
                 {
                     case "1":
-                        Console.WriteLine("Add habitat:");
                         await AddHabitat();
                         Pause();
                         break;
 
                     case "2":
-                        Console.WriteLine("Show all habitats:");
                         await ShowAllHabitats();
                         Pause();
                         break;
 
                     case "3":
-                        Console.WriteLine("Update habitat:");
                         await UpdateHabitat();
                         Pause();
                         break;
 
                     case "4":
-                        Console.WriteLine("Delete habitat:");
                         await DeleteHabitat();
-                        Pause();
-                        break;
-
-                    case "5":
-                        Console.WriteLine("Search habitat:");
-                        await SearchHabitat();
                         Pause();
                         break;
 
@@ -73,6 +62,41 @@ namespace Presentation.Menus
                         break;
                 }
             }
+        }
+
+        private async Task<Habitat?> SelectHabitatFromNumber()
+        {
+            var habitats = await _service.GetAllHabitatsAsync();
+
+            if (habitats.Count == 0)
+            {
+                Console.WriteLine("No habitats found.");
+                return null;
+            }
+
+            Console.WriteLine("Choose a habitat:");
+            Console.WriteLine();
+
+            for (int i = 0; i < habitats.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {habitats[i].Name}");
+                Console.WriteLine($"   Climate: {habitats[i].Climate}");
+                Console.WriteLine($"   Vegetation: {habitats[i].Vegetation}");
+                Console.WriteLine();
+            }
+
+            Console.Write("Enter number: ");
+            string? input = Console.ReadLine();
+
+            bool isValidNumber = int.TryParse(input, out int selectedNumber);
+
+            if (!isValidNumber || selectedNumber < 1 || selectedNumber > habitats.Count)
+            {
+                Console.WriteLine("Invalid number.");
+                return null;
+            }
+
+            return habitats[selectedNumber - 1];
         }
 
         private async Task AddHabitat()
@@ -122,12 +146,11 @@ namespace Presentation.Menus
                 return;
             }
 
-            foreach (var habitat in habitats)
+            for (int i = 0; i < habitats.Count; i++)
             {
-                Console.WriteLine($"ID: {habitat.Id}");
-                Console.WriteLine($"Name: {habitat.Name}");
-                Console.WriteLine($"Climate: {habitat.Climate}");
-                Console.WriteLine($"Vegetation: {habitat.Vegetation}");
+                Console.WriteLine($"{i + 1}. {habitats[i].Name}");
+                Console.WriteLine($"Climate: {habitats[i].Climate}");
+                Console.WriteLine($"Vegetation: {habitats[i].Vegetation}");
                 Console.WriteLine();
             }
         }
@@ -137,41 +160,35 @@ namespace Presentation.Menus
             Console.Clear();
             Console.WriteLine("===== UPDATE HABITAT =====");
 
-            Console.Write("Enter habitat ID: ");
-            string? idInput = Console.ReadLine();
+            Habitat? selectedHabitat = await SelectHabitatFromNumber();
 
-            bool isValidId = Guid.TryParse(idInput, out Guid habitatId);
-
-            if (!isValidId)
+            if (selectedHabitat == null)
             {
-                Console.WriteLine("Invalid habitat ID.");
                 return;
             }
 
-            var habitat = await _service.GetHabitatByIdAsync(habitatId);
+            Console.WriteLine();
+            Console.WriteLine($"Selected habitat: {selectedHabitat.Name}");
+            Console.WriteLine();
 
-            if (habitat == null)
-            {
-                Console.WriteLine("Habitat not found.");
-                return;
-            }
-
-            Console.Write("Name: ");
+            Console.Write("New name: ");
             string name = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Climate: ");
+            Console.Write("New climate: ");
             string climate = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Vegetation: ");
+            Console.Write("New vegetation: ");
             string vegetation = Console.ReadLine() ?? string.Empty;
 
-            bool isUpdated = await _service.UpdateHabitatAsync(habitatId, new Habitat
+            Habitat updatedHabitat = new Habitat
             {
-                Id = habitat.Id,
+                Id = selectedHabitat.Id,
                 Name = name,
                 Climate = climate,
                 Vegetation = vegetation
-            });
+            };
+
+            bool isUpdated = await _service.UpdateHabitatAsync(selectedHabitat.Id, updatedHabitat);
 
             if (isUpdated)
             {
@@ -188,18 +205,26 @@ namespace Presentation.Menus
             Console.Clear();
             Console.WriteLine("===== DELETE HABITAT =====");
 
-            Console.Write("Enter habitat ID: ");
-            string? idInput = Console.ReadLine();
+            Habitat? selectedHabitat = await SelectHabitatFromNumber();
 
-            bool isValidId = Guid.TryParse(idInput, out Guid habitatId);
-
-            if (!isValidId)
+            if (selectedHabitat == null)
             {
-                Console.WriteLine("Invalid habitat ID.");
                 return;
             }
 
-            bool isDeleted = await _service.DeleteHabitatAsync(habitatId);
+            Console.WriteLine();
+            Console.WriteLine($"Selected habitat: {selectedHabitat.Name}");
+            Console.Write("Are you sure you want to delete this habitat? (y/n): ");
+
+            string? confirmation = Console.ReadLine();
+
+            if (confirmation?.ToLower() != "y")
+            {
+                Console.WriteLine("Delete cancelled.");
+                return;
+            }
+
+            bool isDeleted = await _service.DeleteHabitatAsync(selectedHabitat.Id);
 
             if (isDeleted)
             {
@@ -211,34 +236,12 @@ namespace Presentation.Menus
             }
         }
 
-        private async Task SearchHabitat()
+        private static void PrintHabitat(Habitat habitat)
         {
-            Console.Clear();
-            Console.WriteLine("===== SEARCH HABITAT =====");
-
-            Console.Write("Enter habitat ID: ");
-            string? idInput = Console.ReadLine();
-
-            bool isValidId = Guid.TryParse(idInput, out Guid habitatId);
-
-            if (!isValidId)
-            {
-                Console.WriteLine("Invalid habitat ID.");
-                return;
-            }
-
-            var habitat = await _service.GetHabitatByIdAsync(habitatId);
-
-            if (habitat == null)
-            {
-                Console.WriteLine("Habitat not found.");
-                return;
-            }
-
-            Console.WriteLine($"ID: {habitat.Id}");
             Console.WriteLine($"Name: {habitat.Name}");
             Console.WriteLine($"Climate: {habitat.Climate}");
             Console.WriteLine($"Vegetation: {habitat.Vegetation}");
+            Console.WriteLine();
         }
 
         private static void Pause()
