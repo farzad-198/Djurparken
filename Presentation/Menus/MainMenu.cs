@@ -42,7 +42,7 @@ namespace Presentation.Menus
                 switch (choice)
                 {
                     case "1":
-                        AnimalMenu animalMenu = new AnimalMenu(_animalService);
+                        AnimalMenu animalMenu = new AnimalMenu(_animalService, _habitatService);
                         await animalMenu.StartAnimalMenu();
                         break;
 

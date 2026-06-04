@@ -1,19 +1,19 @@
 ﻿using Application.Services;
 using Domain.Entities;
 
-
 namespace Presentation.Menus
 {
-
     public class AnimalMenu
     {
+        private readonly AnimalService _animalService;
+        private readonly HabitatService _habitatService;
 
-        private readonly AnimalService _Service;
-
-        public AnimalMenu(AnimalService service)
+        public AnimalMenu(AnimalService animalService, HabitatService habitatService)
         {
-            _Service = service;
+            _animalService = animalService;
+            _habitatService = habitatService;
         }
+
         public async Task StartAnimalMenu()
         {
             bool isRunning = true;
@@ -27,7 +27,6 @@ namespace Presentation.Menus
                 Console.WriteLine("2. Show all animals");
                 Console.WriteLine("3. Update animal");
                 Console.WriteLine("4. Delete animal");
-                Console.WriteLine("5. Search animals");
                 Console.WriteLine("0. Back to main menu");
                 Console.Write("Choose an option: ");
 
@@ -36,32 +35,22 @@ namespace Presentation.Menus
                 switch (choice)
                 {
                     case "1":
-                        Console.WriteLine("Add animal:");
                         await AddAnimal();
                         Pause();
                         break;
 
                     case "2":
-                        Console.WriteLine("Show all animals: ");
                         await ShowAllAnimals();
                         Pause();
                         break;
 
                     case "3":
-                        Console.WriteLine("Update animal:");
                         await UpdateAnimal();
                         Pause();
                         break;
 
                     case "4":
-                        Console.WriteLine("Delete animal:");
                         await DeleteAnimal();
-                        Pause();
-                        break;
-
-                    case "5":
-                        Console.WriteLine(" Search animals :");
-                        await SearchAnimals();
                         Pause();
                         break;
 
@@ -76,6 +65,7 @@ namespace Presentation.Menus
                 }
             }
         }
+
         private static void Pause()
         {
             Console.WriteLine();
@@ -83,6 +73,75 @@ namespace Presentation.Menus
             Console.ReadKey();
         }
 
+        private async Task<Animal?> SelectAnimalFromNumber()
+        {
+            var animals = await _animalService.GetAllAnimalsAsync();
+
+            if (animals.Count == 0)
+            {
+                Console.WriteLine("No animals found.");
+                return null;
+            }
+
+            Console.WriteLine("Choose an animal:");
+            Console.WriteLine();
+
+            for (int i = 0; i < animals.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {animals[i].Name} - {animals[i].Species} - {animals[i].Status}");
+            }
+
+            Console.WriteLine();
+            Console.Write("Enter number: ");
+
+            string? input = Console.ReadLine();
+
+            bool isValidNumber = int.TryParse(input, out int selectedNumber);
+
+            if (!isValidNumber || selectedNumber < 1 || selectedNumber > animals.Count)
+            {
+                Console.WriteLine("Invalid number.");
+                return null;
+            }
+
+            return animals[selectedNumber - 1];
+        }
+
+        private async Task<Habitat?> SelectHabitatFromNumber()
+        {
+            var habitats = await _habitatService.GetAllHabitatsAsync();
+
+            if (habitats.Count == 0)
+            {
+                Console.WriteLine("No habitats found.");
+                Console.WriteLine("You must add a habitat before adding an animal.");
+                return null;
+            }
+
+            Console.WriteLine("Choose a habitat:");
+            Console.WriteLine();
+
+            for (int i = 0; i < habitats.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {habitats[i].Name}");
+                Console.WriteLine($"   Climate: {habitats[i].Climate}");
+                Console.WriteLine($"   Vegetation: {habitats[i].Vegetation}");
+                Console.WriteLine();
+            }
+
+            Console.Write("Enter habitat number: ");
+            string? input = Console.ReadLine();
+
+            bool isValidNumber = int.TryParse(input, out int selectedNumber);
+
+            if (!isValidNumber || selectedNumber < 1 || selectedNumber > habitats.Count)
+            {
+                Console.WriteLine("Invalid habitat number.");
+                return null;
+            }
+
+            return habitats[selectedNumber - 1];
+        }
 
         private async Task AddAnimal()
         {
@@ -102,18 +161,21 @@ namespace Presentation.Menus
             string status = Console.ReadLine() ?? string.Empty;
 
             Console.Write("Birth date (yyyy-mm-dd): ");
-            DateTime birthDate = DateTime.Parse(Console.ReadLine() ?? DateTime.Now.ToString("yyyy-MM-dd"));
+            string? birthDateInput = Console.ReadLine();
+
+            bool isValidBirthDate = DateTime.TryParse(birthDateInput, out DateTime birthDate);
+
+            if (!isValidBirthDate)
+            {
+                Console.WriteLine("Invalid birth date.");
+                return;
+            }
 
             Console.WriteLine();
-            Console.Write("Enter habitat ID: ");
-            string? habitatInput = Console.ReadLine();
+            Habitat? selectedHabitat = await SelectHabitatFromNumber();
 
-            bool isValidHabitatId = Guid.TryParse(habitatInput, out Guid habitatId);
-
-            if (!isValidHabitatId)
+            if (selectedHabitat == null)
             {
-                Console.WriteLine("Invalid habitat ID.");
-                Pause();
                 return;
             }
 
@@ -125,109 +187,144 @@ namespace Presentation.Menus
                 Gender = gender,
                 Status = status,
                 BirthDate = birthDate,
-                HabitatId = habitatId
+                HabitatId = selectedHabitat.Id
             };
-            var newAnimal = await _Service.AddAnimalAsync(animal);
+
+            var newAnimal = await _animalService.AddAnimalAsync(animal);
+
             if (newAnimal != null)
             {
                 Console.WriteLine("Animal added successfully.");
+                Console.WriteLine($"Habitat: {selectedHabitat.Name}");
             }
             else
             {
                 Console.WriteLine("Failed to add animal.");
             }
-            Console.WriteLine();
-
         }
+
         private async Task ShowAllAnimals()
         {
             Console.Clear();
             Console.WriteLine("===== ALL ANIMALS =====");
-            var animals = await _Service.GetAllAnimalsAsync();
+
+            var animals = await _animalService.GetAllAnimalsAsync();
+
             if (animals.Count == 0)
             {
                 Console.WriteLine("No animals found.");
                 return;
             }
-            foreach (var animal in animals)
+
+            for (int i = 0; i < animals.Count; i++)
             {
-                Console.WriteLine($"ID: {animal.Id}");
-                Console.WriteLine($"Name: {animal.Name}");
-                Console.WriteLine($"Species: {animal.Species}");
-                Console.WriteLine($"Gender: {animal.Gender}");
-                Console.WriteLine($"Status: {animal.Status}");
-                Console.WriteLine($"Birth Date: {animal.BirthDate}");
-                Console.WriteLine($"Habitat ID: {animal.HabitatId}");
+                Console.WriteLine($"{i + 1}. {animals[i].Name}");
+                Console.WriteLine($"Species: {animals[i].Species}");
+                Console.WriteLine($"Gender: {animals[i].Gender}");
+                Console.WriteLine($"Status: {animals[i].Status}");
+                Console.WriteLine($"Birth Date: {animals[i].BirthDate:yyyy-MM-dd}");
                 Console.WriteLine();
             }
         }
+
         private async Task UpdateAnimal()
         {
             Console.Clear();
             Console.WriteLine("===== UPDATE ANIMAL =====");
-            Console.Write("Enter animal ID: ");
-            string? idInput = Console.ReadLine();
-            bool isValidId = Guid.TryParse(idInput, out Guid animalId);
-            if (!isValidId)
+
+            Animal? selectedAnimal = await SelectAnimalFromNumber();
+
+            if (selectedAnimal == null)
             {
-                Console.WriteLine("Invalid animal ID.");
-                Pause();
                 return;
             }
-            var animal = await _Service.GetAnimalByIdAsync(animalId);
-            if (animal == null)
-            {
-                Console.WriteLine("Animal not found.");
-                Pause();
-                return;
-            }
-            Console.Write("Name: ");
+
+            Console.WriteLine();
+            Console.WriteLine($"Selected animal: {selectedAnimal.Name} - {selectedAnimal.Species}");
+            Console.WriteLine();
+
+            Console.Write("New name: ");
             string name = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Species: ");
+            Console.Write("New species: ");
             string species = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Gender: ");
+            Console.Write("New gender: ");
             string gender = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Status: ");
+            Console.Write("New status: ");
             string status = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Birth date (yyyy-mm-dd): ");
-            DateTime birthDate = DateTime.Parse(Console.ReadLine() ?? DateTime.Now.ToString("yyyy-MM-dd"));
-            bool isUpdated = await _Service.UpdateAnimalAsync(animalId, new Animal
+            Console.Write("New birth date (yyyy-mm-dd): ");
+            string? birthDateInput = Console.ReadLine();
+
+            bool isValidBirthDate = DateTime.TryParse(birthDateInput, out DateTime birthDate);
+
+            if (!isValidBirthDate)
             {
-                Id = animal.Id,
+                Console.WriteLine("Invalid birth date.");
+                return;
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Choose new habitat:");
+            Habitat? selectedHabitat = await SelectHabitatFromNumber();
+
+            if (selectedHabitat == null)
+            {
+                return;
+            }
+
+            Animal updatedAnimal = new Animal
+            {
+                Id = selectedAnimal.Id,
                 Name = name,
                 Species = species,
                 Gender = gender,
                 Status = status,
                 BirthDate = birthDate,
-                HabitatId = animal.HabitatId
-            });
+                HabitatId = selectedHabitat.Id
+            };
+
+            bool isUpdated = await _animalService.UpdateAnimalAsync(selectedAnimal.Id, updatedAnimal);
+
             if (isUpdated)
             {
                 Console.WriteLine("Animal updated successfully.");
+                Console.WriteLine($"New habitat: {selectedHabitat.Name}");
             }
             else
             {
                 Console.WriteLine("Failed to update animal.");
             }
         }
+
         private async Task DeleteAnimal()
         {
             Console.Clear();
             Console.WriteLine("===== DELETE ANIMAL =====");
-            Console.Write("Enter animal ID: ");
-            string? idInput = Console.ReadLine();
-            bool isValidId = Guid.TryParse(idInput, out Guid animalId);
-            if (!isValidId)
+
+            Animal? selectedAnimal = await SelectAnimalFromNumber();
+
+            if (selectedAnimal == null)
             {
-                Console.WriteLine("Invalid animal ID.");
-                Pause();
                 return;
             }
-            bool isDeleted = await _Service.DeleteAnimalAsync(animalId);
+
+            Console.WriteLine();
+            Console.WriteLine($"Selected animal: {selectedAnimal.Name} - {selectedAnimal.Species}");
+            Console.Write("Are you sure you want to delete this animal? (y/n): ");
+
+            string? confirmation = Console.ReadLine();
+
+            if (confirmation?.ToLower() != "y")
+            {
+                Console.WriteLine("Delete cancelled.");
+                return;
+            }
+
+            bool isDeleted = await _animalService.DeleteAnimalAsync(selectedAnimal.Id);
+
             if (isDeleted)
             {
                 Console.WriteLine("Animal deleted successfully.");
@@ -237,36 +334,15 @@ namespace Presentation.Menus
                 Console.WriteLine("Failed to delete animal.");
             }
         }
-        private async Task SearchAnimals()
+
+        private static void PrintAnimal(Animal animal)
         {
-            Console.Clear();
-            Console.WriteLine("===== SEARCH ANIMALS =====");
-            Console.Write("Enter search Id: ");
-            string? idInput = Console.ReadLine();
-            bool isValidId = Guid.TryParse(idInput, out Guid animalId);
-            if (!isValidId)
-            {
-                Console.WriteLine("Invalid animal ID.");
-                Pause();
-                return;
-            }
-            var animal = await _Service.GetAnimalByIdAsync(animalId);
-            if (animal == null)
-            {
-                Console.WriteLine("Animal not found.");
-                Pause();
-                return;
-            }
-            Console.WriteLine($"ID: {animal.Id}");
             Console.WriteLine($"Name: {animal.Name}");
             Console.WriteLine($"Species: {animal.Species}");
             Console.WriteLine($"Gender: {animal.Gender}");
             Console.WriteLine($"Status: {animal.Status}");
-            Console.WriteLine($"Birth Date: {animal.BirthDate}");
-            Console.WriteLine($"Habitat ID: {animal.HabitatId}");
+            Console.WriteLine($"Birth Date: {animal.BirthDate:yyyy-MM-dd}");
             Console.WriteLine();
-
         }
     }
 }
-        
