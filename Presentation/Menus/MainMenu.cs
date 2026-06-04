@@ -55,7 +55,7 @@ namespace Presentation.Menus
                         await visitorMenu.StartVisitorMenu();
                         break;
                     case "4":
-                        VisitMenu visitMenu = new VisitMenu(_visitService);
+                        VisitMenu visitMenu = new VisitMenu(_visitService, _visitorService);
                         await visitMenu.StartVisitMenu();
                         break;
                     case "5":

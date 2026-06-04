@@ -25,7 +25,6 @@ namespace Presentation.Menus
                 Console.WriteLine("2. Show all visitors");
                 Console.WriteLine("3. Update visitor");
                 Console.WriteLine("4. Delete visitor");
-                Console.WriteLine("5. Search visitor");
                 Console.WriteLine("0. Back to main menu");
                 Console.Write("Choose an option: ");
 
@@ -34,34 +33,25 @@ namespace Presentation.Menus
                 switch (choice)
                 {
                     case "1":
-                        Console.WriteLine("Add visitor:");
                         await AddVisitor();
                         Pause();
                         break;
 
                     case "2":
-                        Console.WriteLine("Show all visitors:");
                         await ShowAllVisitors();
                         Pause();
                         break;
 
                     case "3":
-                        Console.WriteLine("Update visitor:");
                         await UpdateVisitor();
                         Pause();
                         break;
 
                     case "4":
-                        Console.WriteLine("Delete visitor:");
                         await DeleteVisitor();
                         Pause();
                         break;
 
-                    case "5":
-                        Console.WriteLine("Search visitor:");
-                        await SearchVisitor();
-                        Pause();
-                        break;
 
                     case "0":
                         isRunning = false;
@@ -73,6 +63,41 @@ namespace Presentation.Menus
                         break;
                 }
             }
+        }
+
+        private async Task<Visitor?> SelectVisitorFromNumber()
+        {
+            var visitors = await _service.GetAllVisitorsAsync();
+
+            if (visitors.Count == 0)
+            {
+                Console.WriteLine("No visitors found.");
+                return null;
+            }
+
+            Console.WriteLine("Choose a visitor:");
+            Console.WriteLine();
+
+            for (int i = 0; i < visitors.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {visitors[i].FullName}");
+                Console.WriteLine($"   Phone number: {visitors[i].PhoneNumber}");
+                Console.WriteLine($"   Age: {visitors[i].Age}");
+                Console.WriteLine();
+            }
+
+            Console.Write("Enter number: ");
+            string? input = Console.ReadLine();
+
+            bool isValidNumber = int.TryParse(input, out int selectedNumber);
+
+            if (!isValidNumber || selectedNumber < 1 || selectedNumber > visitors.Count)
+            {
+                Console.WriteLine("Invalid number.");
+                return null;
+            }
+
+            return visitors[selectedNumber - 1];
         }
 
         private async Task AddVisitor()
@@ -87,7 +112,15 @@ namespace Presentation.Menus
             string phoneNumber = Console.ReadLine() ?? string.Empty;
 
             Console.Write("Age: ");
-            int age = int.Parse(Console.ReadLine() ?? "0");
+            string? ageInput = Console.ReadLine();
+
+            bool isValidAge = int.TryParse(ageInput, out int age);
+
+            if (!isValidAge)
+            {
+                Console.WriteLine("Invalid age.");
+                return;
+            }
 
             Visitor visitor = new Visitor
             {
@@ -122,12 +155,11 @@ namespace Presentation.Menus
                 return;
             }
 
-            foreach (var visitor in visitors)
+            for (int i = 0; i < visitors.Count; i++)
             {
-                Console.WriteLine($"ID: {visitor.Id}");
-                Console.WriteLine($"Full name: {visitor.FullName}");
-                Console.WriteLine($"Phone number: {visitor.PhoneNumber}");
-                Console.WriteLine($"Age: {visitor.Age}");
+                Console.WriteLine($"{i + 1}. {visitors[i].FullName}");
+                Console.WriteLine($"Phone number: {visitors[i].PhoneNumber}");
+                Console.WriteLine($"Age: {visitors[i].Age}");
                 Console.WriteLine();
             }
         }
@@ -137,41 +169,43 @@ namespace Presentation.Menus
             Console.Clear();
             Console.WriteLine("===== UPDATE VISITOR =====");
 
-            Console.Write("Enter visitor ID: ");
-            string? idInput = Console.ReadLine();
+            Visitor? selectedVisitor = await SelectVisitorFromNumber();
 
-            bool isValidId = Guid.TryParse(idInput, out Guid visitorId);
-
-            if (!isValidId)
+            if (selectedVisitor == null)
             {
-                Console.WriteLine("Invalid visitor ID.");
                 return;
             }
 
-            var visitor = await _service.GetVisitorByIdAsync(visitorId);
+            Console.WriteLine();
+            Console.WriteLine($"Selected visitor: {selectedVisitor.FullName}");
+            Console.WriteLine();
 
-            if (visitor == null)
-            {
-                Console.WriteLine("Visitor not found.");
-                return;
-            }
-
-            Console.Write("Full name: ");
+            Console.Write("New full name: ");
             string fullName = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Phone number: ");
+            Console.Write("New phone number: ");
             string phoneNumber = Console.ReadLine() ?? string.Empty;
 
-            Console.Write("Age: ");
-            int age = int.Parse(Console.ReadLine() ?? "0");
+            Console.Write("New age: ");
+            string? ageInput = Console.ReadLine();
 
-            bool isUpdated = await _service.UpdateVisitorAsync(visitorId, new Visitor
+            bool isValidAge = int.TryParse(ageInput, out int age);
+
+            if (!isValidAge)
             {
-                Id = visitor.Id,
+                Console.WriteLine("Invalid age.");
+                return;
+            }
+
+            Visitor updatedVisitor = new Visitor
+            {
+                Id = selectedVisitor.Id,
                 FullName = fullName,
                 PhoneNumber = phoneNumber,
                 Age = age
-            });
+            };
+
+            bool isUpdated = await _service.UpdateVisitorAsync(selectedVisitor.Id, updatedVisitor);
 
             if (isUpdated)
             {
@@ -188,18 +222,26 @@ namespace Presentation.Menus
             Console.Clear();
             Console.WriteLine("===== DELETE VISITOR =====");
 
-            Console.Write("Enter visitor ID: ");
-            string? idInput = Console.ReadLine();
+            Visitor? selectedVisitor = await SelectVisitorFromNumber();
 
-            bool isValidId = Guid.TryParse(idInput, out Guid visitorId);
-
-            if (!isValidId)
+            if (selectedVisitor == null)
             {
-                Console.WriteLine("Invalid visitor ID.");
                 return;
             }
 
-            bool isDeleted = await _service.DeleteVisitorAsync(visitorId);
+            Console.WriteLine();
+            Console.WriteLine($"Selected visitor: {selectedVisitor.FullName}");
+            Console.Write("Are you sure you want to delete this visitor? (y/n): ");
+
+            string? confirmation = Console.ReadLine();
+
+            if (confirmation?.ToLower() != "y")
+            {
+                Console.WriteLine("Delete cancelled.");
+                return;
+            }
+
+            bool isDeleted = await _service.DeleteVisitorAsync(selectedVisitor.Id);
 
             if (isDeleted)
             {
@@ -211,34 +253,12 @@ namespace Presentation.Menus
             }
         }
 
-        private async Task SearchVisitor()
+        private static void PrintVisitor(Visitor visitor)
         {
-            Console.Clear();
-            Console.WriteLine("===== SEARCH VISITOR =====");
-
-            Console.Write("Enter visitor ID: ");
-            string? idInput = Console.ReadLine();
-
-            bool isValidId = Guid.TryParse(idInput, out Guid visitorId);
-
-            if (!isValidId)
-            {
-                Console.WriteLine("Invalid visitor ID.");
-                return;
-            }
-
-            var visitor = await _service.GetVisitorByIdAsync(visitorId);
-
-            if (visitor == null)
-            {
-                Console.WriteLine("Visitor not found.");
-                return;
-            }
-
-            Console.WriteLine($"ID: {visitor.Id}");
             Console.WriteLine($"Full name: {visitor.FullName}");
             Console.WriteLine($"Phone number: {visitor.PhoneNumber}");
             Console.WriteLine($"Age: {visitor.Age}");
+            Console.WriteLine();
         }
 
         private static void Pause()

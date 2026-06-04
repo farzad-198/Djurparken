@@ -5,11 +5,13 @@ namespace Presentation.Menus
 {
     public class VisitMenu
     {
-        private readonly VisitService _service;
+        private readonly VisitService _visitService;
+        private readonly VisitorService _visitorService;
 
-        public VisitMenu(VisitService service)
+        public VisitMenu(VisitService visitService, VisitorService visitorService)
         {
-            _service = service;
+            _visitService = visitService;
+            _visitorService = visitorService;
         }
 
         public async Task StartVisitMenu()
@@ -25,7 +27,6 @@ namespace Presentation.Menus
                 Console.WriteLine("2. Show all visits");
                 Console.WriteLine("3. Update visit");
                 Console.WriteLine("4. Delete visit");
-                Console.WriteLine("5. Search visit");
                 Console.WriteLine("0. Back to main menu");
                 Console.Write("Choose an option: ");
 
@@ -34,34 +35,25 @@ namespace Presentation.Menus
                 switch (choice)
                 {
                     case "1":
-                        Console.WriteLine("Add visit:");
                         await AddVisit();
                         Pause();
                         break;
 
                     case "2":
-                        Console.WriteLine("Show all visits:");
                         await ShowAllVisits();
                         Pause();
                         break;
 
                     case "3":
-                        Console.WriteLine("Update visit:");
                         await UpdateVisit();
                         Pause();
                         break;
 
                     case "4":
-                        Console.WriteLine("Delete visit:");
                         await DeleteVisit();
                         Pause();
                         break;
 
-                    case "5":
-                        Console.WriteLine("Search visit:");
-                        await SearchVisit();
-                        Pause();
-                        break;
 
                     case "0":
                         isRunning = false;
@@ -75,24 +67,107 @@ namespace Presentation.Menus
             }
         }
 
+        private async Task<Visitor?> SelectVisitorFromNumber()
+        {
+            var visitors = await _visitorService.GetAllVisitorsAsync();
+
+            if (visitors.Count == 0)
+            {
+                Console.WriteLine("No visitors found.");
+                Console.WriteLine("You must add a visitor before adding a visit.");
+                return null;
+            }
+
+            Console.WriteLine("Choose a visitor:");
+            Console.WriteLine();
+
+            for (int i = 0; i < visitors.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {visitors[i].FullName}");
+                Console.WriteLine($"   Phone: {visitors[i].PhoneNumber}");
+                Console.WriteLine($"   Age: {visitors[i].Age}");
+                Console.WriteLine();
+            }
+
+            Console.Write("Enter visitor number: ");
+            string? input = Console.ReadLine();
+
+            bool isValidNumber = int.TryParse(input, out int selectedNumber);
+
+            if (!isValidNumber || selectedNumber < 1 || selectedNumber > visitors.Count)
+            {
+                Console.WriteLine("Invalid visitor number.");
+                return null;
+            }
+
+            return visitors[selectedNumber - 1];
+        }
+
+        private async Task<Visit?> SelectVisitFromNumber()
+        {
+            var visits = await _visitService.GetAllVisitsAsync();
+            var visitors = await _visitorService.GetAllVisitorsAsync();
+
+            if (visits.Count == 0)
+            {
+                Console.WriteLine("No visits found.");
+                return null;
+            }
+
+            Console.WriteLine("Choose a visit:");
+            Console.WriteLine();
+
+            for (int i = 0; i < visits.Count; i++)
+            {
+                Visitor? visitor = visitors.FirstOrDefault(v => v.Id == visits[i].VisitorId);
+                string visitorName = visitor != null ? visitor.FullName : "Unknown visitor";
+
+                Console.WriteLine($"{i + 1}. {visitorName}");
+                Console.WriteLine($"   Visit date: {visits[i].VisitDate:yyyy-MM-dd}");
+                Console.WriteLine($"   Has paid ticket: {visits[i].HasPaidTicket}");
+                Console.WriteLine();
+            }
+
+            Console.Write("Enter visit number: ");
+            string? input = Console.ReadLine();
+
+            bool isValidNumber = int.TryParse(input, out int selectedNumber);
+
+            if (!isValidNumber || selectedNumber < 1 || selectedNumber > visits.Count)
+            {
+                Console.WriteLine("Invalid visit number.");
+                return null;
+            }
+
+            return visits[selectedNumber - 1];
+        }
+
         private async Task AddVisit()
         {
             Console.Clear();
             Console.WriteLine("===== ADD VISIT =====");
 
-            Console.Write("Visitor ID: ");
-            string? visitorInput = Console.ReadLine();
+            Visitor? selectedVisitor = await SelectVisitorFromNumber();
 
-            bool isValidVisitorId = Guid.TryParse(visitorInput, out Guid visitorId);
-
-            if (!isValidVisitorId)
+            if (selectedVisitor == null)
             {
-                Console.WriteLine("Invalid visitor ID.");
                 return;
             }
 
+            Console.WriteLine();
+            Console.WriteLine($"Selected visitor: {selectedVisitor.FullName}");
+            Console.WriteLine();
+
             Console.Write("Visit date (yyyy-mm-dd): ");
-            DateTime visitDate = DateTime.Parse(Console.ReadLine() ?? DateTime.Now.ToString("yyyy-MM-dd"));
+            string? visitDateInput = Console.ReadLine();
+
+            bool isValidVisitDate = DateTime.TryParse(visitDateInput, out DateTime visitDate);
+
+            if (!isValidVisitDate)
+            {
+                Console.WriteLine("Invalid visit date.");
+                return;
+            }
 
             Console.Write("Has paid ticket? (yes/no): ");
             string paidInput = Console.ReadLine() ?? string.Empty;
@@ -102,12 +177,12 @@ namespace Presentation.Menus
             Visit visit = new Visit
             {
                 Id = Guid.NewGuid(),
-                VisitorId = visitorId,
+                VisitorId = selectedVisitor.Id,
                 VisitDate = visitDate,
                 HasPaidTicket = hasPaidTicket
             };
 
-            var newVisit = await _service.AddVisitAsync(visit);
+            var newVisit = await _visitService.AddVisitAsync(visit);
 
             if (newVisit != null)
             {
@@ -124,7 +199,8 @@ namespace Presentation.Menus
             Console.Clear();
             Console.WriteLine("===== ALL VISITS =====");
 
-            var visits = await _service.GetAllVisitsAsync();
+            var visits = await _visitService.GetAllVisitsAsync();
+            var visitors = await _visitorService.GetAllVisitorsAsync();
 
             if (visits.Count == 0)
             {
@@ -132,12 +208,14 @@ namespace Presentation.Menus
                 return;
             }
 
-            foreach (var visit in visits)
+            for (int i = 0; i < visits.Count; i++)
             {
-                Console.WriteLine($"ID: {visit.Id}");
-                Console.WriteLine($"Visitor ID: {visit.VisitorId}");
-                Console.WriteLine($"Visit date: {visit.VisitDate:yyyy-MM-dd}");
-                Console.WriteLine($"Has paid ticket: {visit.HasPaidTicket}");
+                Visitor? visitor = visitors.FirstOrDefault(v => v.Id == visits[i].VisitorId);
+                string visitorName = visitor != null ? visitor.FullName : "Unknown visitor";
+
+                Console.WriteLine($"{i + 1}. {visitorName}");
+                Console.WriteLine($"Visit date: {visits[i].VisitDate:yyyy-MM-dd}");
+                Console.WriteLine($"Has paid ticket: {visits[i].HasPaidTicket}");
                 Console.WriteLine();
             }
         }
@@ -147,40 +225,48 @@ namespace Presentation.Menus
             Console.Clear();
             Console.WriteLine("===== UPDATE VISIT =====");
 
-            Console.Write("Enter visit ID: ");
-            string? idInput = Console.ReadLine();
+            Visit? selectedVisit = await SelectVisitFromNumber();
 
-            bool isValidId = Guid.TryParse(idInput, out Guid visitId);
-
-            if (!isValidId)
+            if (selectedVisit == null)
             {
-                Console.WriteLine("Invalid visit ID.");
                 return;
             }
 
-            var visit = await _service.GetVisitByIdAsync(visitId);
+            Console.WriteLine();
+            Console.WriteLine("Choose new visitor:");
+            Visitor? selectedVisitor = await SelectVisitorFromNumber();
 
-            if (visit == null)
+            if (selectedVisitor == null)
             {
-                Console.WriteLine("Visit not found.");
                 return;
             }
 
-            Console.Write("Visit date (yyyy-mm-dd): ");
-            DateTime visitDate = DateTime.Parse(Console.ReadLine() ?? DateTime.Now.ToString("yyyy-MM-dd"));
+            Console.WriteLine();
+            Console.Write("New visit date (yyyy-mm-dd): ");
+            string? visitDateInput = Console.ReadLine();
+
+            bool isValidVisitDate = DateTime.TryParse(visitDateInput, out DateTime visitDate);
+
+            if (!isValidVisitDate)
+            {
+                Console.WriteLine("Invalid visit date.");
+                return;
+            }
 
             Console.Write("Has paid ticket? (yes/no): ");
             string paidInput = Console.ReadLine() ?? string.Empty;
 
             bool hasPaidTicket = paidInput.ToLower() == "yes" || paidInput.ToLower() == "y";
 
-            bool isUpdated = await _service.UpdateVisitAsync(visitId, new Visit
+            Visit updatedVisit = new Visit
             {
-                Id = visit.Id,
-                VisitorId = visit.VisitorId,
+                Id = selectedVisit.Id,
+                VisitorId = selectedVisitor.Id,
                 VisitDate = visitDate,
                 HasPaidTicket = hasPaidTicket
-            });
+            };
+
+            bool isUpdated = await _visitService.UpdateVisitAsync(selectedVisit.Id, updatedVisit);
 
             if (isUpdated)
             {
@@ -197,18 +283,25 @@ namespace Presentation.Menus
             Console.Clear();
             Console.WriteLine("===== DELETE VISIT =====");
 
-            Console.Write("Enter visit ID: ");
-            string? idInput = Console.ReadLine();
+            Visit? selectedVisit = await SelectVisitFromNumber();
 
-            bool isValidId = Guid.TryParse(idInput, out Guid visitId);
-
-            if (!isValidId)
+            if (selectedVisit == null)
             {
-                Console.WriteLine("Invalid visit ID.");
                 return;
             }
 
-            bool isDeleted = await _service.DeleteVisitAsync(visitId);
+            Console.WriteLine();
+            Console.Write("Are you sure you want to delete this visit? (y/n): ");
+
+            string? confirmation = Console.ReadLine();
+
+            if (confirmation?.ToLower() != "y")
+            {
+                Console.WriteLine("Delete cancelled.");
+                return;
+            }
+
+            bool isDeleted = await _visitService.DeleteVisitAsync(selectedVisit.Id);
 
             if (isDeleted)
             {
@@ -220,35 +313,6 @@ namespace Presentation.Menus
             }
         }
 
-        private async Task SearchVisit()
-        {
-            Console.Clear();
-            Console.WriteLine("===== SEARCH VISIT =====");
-
-            Console.Write("Enter visit ID: ");
-            string? idInput = Console.ReadLine();
-
-            bool isValidId = Guid.TryParse(idInput, out Guid visitId);
-
-            if (!isValidId)
-            {
-                Console.WriteLine("Invalid visit ID.");
-                return;
-            }
-
-            var visit = await _service.GetVisitByIdAsync(visitId);
-
-            if (visit == null)
-            {
-                Console.WriteLine("Visit not found.");
-                return;
-            }
-
-            Console.WriteLine($"ID: {visit.Id}");
-            Console.WriteLine($"Visitor ID: {visit.VisitorId}");
-            Console.WriteLine($"Visit date: {visit.VisitDate:yyyy-MM-dd}");
-            Console.WriteLine($"Has paid ticket: {visit.HasPaidTicket}");
-        }
 
         private static void Pause()
         {
