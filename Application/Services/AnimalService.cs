@@ -46,6 +46,8 @@ namespace Application.Services
             animalToUpdate.Name = animal.Name;
             animalToUpdate.Species = animal.Species;
             animalToUpdate.BirthDate = animal.BirthDate;
+            animalToUpdate.Gender = animal.Gender;
+            animalToUpdate.Status = animal.Status;
             await _repo.UpdateAnimalAsync(animalToUpdate);
             return true;
 
