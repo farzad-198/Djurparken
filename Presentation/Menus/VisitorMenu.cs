@@ -253,13 +253,6 @@ namespace Presentation.Menus
             }
         }
 
-        private static void PrintVisitor(Visitor visitor)
-        {
-            Console.WriteLine($"Full name: {visitor.FullName}");
-            Console.WriteLine($"Phone number: {visitor.PhoneNumber}");
-            Console.WriteLine($"Age: {visitor.Age}");
-            Console.WriteLine();
-        }
 
         private static void Pause()
         {
