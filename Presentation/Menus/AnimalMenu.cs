@@ -335,14 +335,6 @@ namespace Presentation.Menus
             }
         }
 
-        private static void PrintAnimal(Animal animal)
-        {
-            Console.WriteLine($"Name: {animal.Name}");
-            Console.WriteLine($"Species: {animal.Species}");
-            Console.WriteLine($"Gender: {animal.Gender}");
-            Console.WriteLine($"Status: {animal.Status}");
-            Console.WriteLine($"Birth Date: {animal.BirthDate:yyyy-MM-dd}");
-            Console.WriteLine();
-        }
+       
     }
 }

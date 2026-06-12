@@ -236,13 +236,7 @@ namespace Presentation.Menus
             }
         }
 
-        private static void PrintHabitat(Habitat habitat)
-        {
-            Console.WriteLine($"Name: {habitat.Name}");
-            Console.WriteLine($"Climate: {habitat.Climate}");
-            Console.WriteLine($"Vegetation: {habitat.Vegetation}");
-            Console.WriteLine();
-        }
+       
 
         private static void Pause()
         {
